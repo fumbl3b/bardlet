@@ -91,8 +91,12 @@ class GPT(nn.Module):
         return self.lm_head(self.ln_f(self.blocks(x)))
 
     @torch.no_grad()
-    def next_token(self, idx, temperature):
+    def next_token(self, idx, temperature, top_k=None):
         logits = self(idx[:, -self.block_size:])[:, -1, :] / temperature
+        if top_k:
+            # Keep only the k most likely characters; the rest get zero probability.
+            kth_best = torch.topk(logits, min(top_k, logits.size(-1))).values[:, [-1]]
+            logits = logits.masked_fill(logits < kth_best, float("-inf"))
         return torch.multinomial(F.softmax(logits, dim=-1), num_samples=1)
 
 
@@ -110,7 +114,9 @@ def main():
     parser.add_argument("--model", default=os.path.join(here, "model.pt"))
     parser.add_argument("--you", default="ROMEO", help="script name used for your lines (hidden)")
     parser.add_argument("--bot", default="JULIET", help="script name used for the model's lines (hidden)")
-    parser.add_argument("--temperature", type=float, default=0.8,
+    parser.add_argument("--top-k", type=int, default=8,
+                        help="only pick among the k likeliest characters; 0 turns this off")
+    parser.add_argument("--temperature", type=float, default=0.7,
                         help="lower = safer and more repetitive, higher = wilder")
     parser.add_argument("--max-chars", type=int, default=400)
     args = parser.parse_args()
@@ -154,7 +160,7 @@ def main():
         reply = ""
         while len(reply) < args.max_chars and not reply.endswith("\n\n"):
             idx = torch.tensor([script], dtype=torch.long, device=device)
-            token = model.next_token(idx, args.temperature).item()
+            token = model.next_token(idx, args.temperature, args.top_k).item()
             script.append(token)
             reply += chars[token]
             print(chars[token], end="", flush=True)

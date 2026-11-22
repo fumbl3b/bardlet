@@ -38,7 +38,8 @@ Type a line and press Enter. ESC cuts the Bard off mid-speech, or quits when it 
 
 | Option | What it does |
 |---|---|
-| `--temperature 0.5` | Safer, more grammatical replies. Higher values (try `1.2`) are wilder. Default `0.8`. |
+| `--temperature 0.5` | Safer, more grammatical replies. Higher values (try `1.2`) are wilder. Default `0.7`. |
+| `--top-k 8` | Only pick among the 8 likeliest next characters (the default). `0` turns it off. |
 | `--mute` | No sound effects. |
 | `--no-intro` | Skip the boot screen. |
 
@@ -63,7 +64,7 @@ speech. It can see the last 256 characters and nothing before that.
 | Size | 6 layers, 4 heads per layer, width 256, context 256 characters |
 | Vocabulary | 65 characters |
 | Training data | Tiny Shakespeare, about 1 MB of text |
-| Loss | 1.21 train, 1.49 validation (measured on the saved `model.pt`) |
+| Loss | 1.13 train, 1.46 validation (measured on the saved `model.pt`) |
 | Hardware | MacBook Air M3 |
 
 ## Files
@@ -73,12 +74,13 @@ speech. It can see the last 256 characters and nothing before that.
 | `bard.py` | The game. |
 | `chat.py` | Plain-text chat, and the model code that `bard.py` loads. |
 | `model.pt` | The trained weights (about 26 MB). |
-| `gpt5.py` | The training script that produced `model.pt`. |
-| `gpt.py` to `gpt4.py` | The steps along the way: tokenizer, bigram model, single attention head, first full transformer. |
+| `gpt6.py` | The training script that produced `model.pt`: learning-rate warmup and cosine decay, early stopping. |
+| `gpt.py` to `gpt5.py` | The steps along the way: tokenizer, bigram model, single attention head, first full transformer, the full-size model at a constant learning rate. |
 | `input.txt` | The training text. |
 
-To train your own, install PyTorch and run `python gpt5.py`. It saves the best
-checkpoint to `model.pt` every 500 steps. Swap in any `input.txt` of about 1 MB or more.
+To train your own, install PyTorch and run `python gpt6.py` (about 45 minutes on a
+MacBook Air M3). It saves the best checkpoint to `model_v2.pt` every 500 steps; play
+it with `python bard.py --model model_v2.pt`. Swap in any `input.txt` of about 1 MB or more.
 
 ## Credits
 

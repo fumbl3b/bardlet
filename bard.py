@@ -7,7 +7,7 @@
     uv run bard.py                    (no setup; uv fetches PyTorch)
     python bard.py                    (if PyTorch is already installed)
 
-Options: --mute, --no-intro, --temperature 0.8, --model model.pt
+Options: --mute, --no-intro, --temperature 0.7, --top-k 8, --model model.pt
 Needs chat.py and model.pt in the same folder.
 On Windows also: pip install windows-curses
 """
@@ -251,7 +251,7 @@ class Game:
 
         sound = "on" if self.sound.player else "off"
         footer = (f" ENTER speak | ESC quit | {self.params:,} params"
-                  f" | temp {self.args.temperature} | sound {sound}")
+                  f" | temp {self.args.temperature} top-k {self.args.top_k or 'off'} | sound {sound}")
         self.put(h - 1, 0, footer, self.YELLOW | curses.A_DIM)
         self.scr.refresh()
 
@@ -305,7 +305,7 @@ class Game:
         reply = ""
         while len(reply) < self.args.max_chars and not reply.endswith("\n\n"):
             idx = torch.tensor([self.script[-block:]], dtype=torch.long, device=self.device)
-            token = self.model.next_token(idx, self.args.temperature).item()
+            token = self.model.next_token(idx, self.args.temperature, self.args.top_k).item()
             self.script.append(token)
             ch = self.chars[token]
             reply += ch
@@ -367,7 +367,10 @@ def main():
     here = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser(description="Ye Olde Bard: chat with a tiny Shakespeare GPT.")
     parser.add_argument("--model", default=os.path.join(here, "model.pt"))
-    parser.add_argument("--temperature", type=float, default=0.8)
+    parser.add_argument("--temperature", type=float, default=0.7,
+                        help="lower = safer, higher = wilder")
+    parser.add_argument("--top-k", type=int, default=8,
+                        help="only pick among the k likeliest characters; 0 turns this off")
     parser.add_argument("--max-chars", type=int, default=400)
     parser.add_argument("--you", default="ROMEO", help="hidden script name for your lines")
     parser.add_argument("--bot", default="JULIET", help="hidden script name for the Bard's lines")
