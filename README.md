@@ -28,7 +28,7 @@ through an old-school terminal game.
 With [uv](https://docs.astral.sh/uv/) there is nothing to install; it fetches PyTorch the first time:
 
 ```
-git clone <this repo> && cd <this repo>
+git clone https://github.com/fumbl3b/bardlet.git && cd bardlet
 uv run bard.py
 ```
 
